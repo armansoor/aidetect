@@ -278,6 +278,7 @@
             // 1. Comments & Structure
             let cCount = 0, tCount = 0;
             let tutorialComments = 0;
+            let boilerplateComments = 0;
             for (let l of trimmed) {
                 if (l.startsWith('//') || l.startsWith('#') || l.startsWith('/*') || l.startsWith('<!--')) {
                     cCount++;
@@ -285,10 +286,13 @@
                     if (/step \d|note:|important:|todo|here we|this function|helper function|add your code here/i.test(lLow)) {
                         tutorialComments++;
                     }
+                    if (/^(?:\/\/|#|\/\*)\s*-{3,}\s*[A-Z\s&]+-{3,}\s*$/.test(l)) {
+                        boilerplateComments++;
+                    }
                 }
                 tCount++;
             }
-            if (tCount > 0 && cCount / tCount > 0.3) {
+            if (tCount > 0 && cCount / tCount > 0.15) {
                 score += 25;
                 flags.push({ level: 'warning', text: "High comment density detected. Often seen in generated or tutorial code." });
             }
@@ -297,19 +301,26 @@
                 flags.push({ level: 'severe', text: "Tutorial-style commentary ('Step 1', 'Note:', 'Here we...'). Classic LLM output." });
                 detected.add("GPT-4");
             }
+            if (boilerplateComments > 1) {
+                score += 40;
+                flags.push({ level: 'severe', text: "Highly structured or conversational boilerplate comments detected. Classic LLM output." });
+            }
 
             // 2. Burstiness / Line length variance
             let burst = getBurst(lines);
             if (burst.cv < 0.25 && lines.length > 10) {
                 score += 20;
                 flags.push({ level: 'warning', text: "Low line length variance. AI-generated code tends to be very uniform in structure." });
+            } else if (burst.cv > 0.5 && lines.length > 10) {
+                score -= 10;
+                flags.push({ level: 'good', text: "High line length variance. Typical of human formatting." });
             }
 
             // 3. Entropy (Word/Token level is more accurate for code)
             let charEnt = getEntropy(code);
             let wordEnt = getWordEntropy(code);
 
-            if (wordEnt < 3.0 && lines.length > 15) {
+            if (wordEnt < 4.0 && lines.length > 15) {
                 score += 15;
                 flags.push({ level: 'info', text: "Low lexical entropy. Very repetitive vocabulary, typical of AI boilerplate." });
             } else if (wordEnt > 6.0 && charEnt > 4.5) {
@@ -319,12 +330,17 @@
 
             // 4. Boilerplate / Generic Naming / AI Fingerprints
             let genericVars = (code.match(/\b(foo|bar|baz|result|temp|data|val|item|element|obj)\b/gi) || []).length;
+            let boilerplateFuncs = (code.match(/\b(handle[A-Z]|setup[A-Z]|init[A-Z]|load[A-Z]|fetch[A-Z])/g) || []).length;
             if (genericVars > 5 && lines.length < 50) {
                 score += 20;
                 flags.push({ level: 'warning', text: "High frequency of generic variable names (temp, data, result, etc.)." });
             }
+            if (boilerplateFuncs > 3 && lines.length < 50) {
+                score += 20;
+                flags.push({ level: 'warning', text: "High frequency of generic or boilerplate function prefixes (handle*, setup*, etc.)." });
+            }
 
-            if (/\b(certainly|here is|as an ai|i can help)\b/i.test(codeLow)) {
+            if (/\b(certainly|here is|as an ai|i can help|as requested|based on your request|here's the updated code)\b/i.test(codeLow)) {
                 score += 80;
                 flags.push({ level: 'severe', text: "Direct LLM conversational leakage detected." });
                 detected.add("Claude 3");
@@ -350,16 +366,22 @@
             }
 
             // 6. Human indicators (messiness)
-            let debugStatements = (code.match(/\b(console\.log|print|System\.out\.println)\b/g) || []).length;
-            if (debugStatements > 3 && !/test|debug/i.test(codeLow)) {
-                score -= 15;
-                flags.push({ level: 'good', text: "Multiple arbitrary debug prints found. Common in human development flows." });
+            let randomStrings = (code.match(/(console\.log|print|System\.out\.println)\(["'](asdf|here|test|123|qwer|wtf|fuck|shit)["']\)/gi) || []).length;
+            if (randomStrings > 0) {
+                score -= 20;
+                flags.push({ level: 'good', text: "Messy/random debug strings found. Common in human development flows." });
             }
 
             let commentedOutCode = (code.match(/\/\/\s*let\s+|\/\/\s*const\s+|\/\/\s*var\s+|\/\/\s*function\s+|\/\/\s*if\s*\(/g) || []).length;
+            let multipleCommentSlashes = (code.match(/\/\/\/\//g) || []).length;
+
             if (commentedOutCode > 1) {
-                score -= 20;
+                score -= 25;
                 flags.push({ level: 'good', text: "Commented-out code blocks detected. AI rarely leaves messy, dead code behind." });
+            }
+            if (multipleCommentSlashes > 0) {
+                score -= 10;
+                flags.push({ level: 'good', text: "Sloppy comment markers ('////') detected. Unlikely from an AI." });
             }
 
             score = Math.max(0, Math.min(100, score));

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+                    }
+                }
+            }
+        }
+
+        // grab system preference
+        try {
+            let pref = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && pref)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        } catch (err) { console.error("theme issue:", err); }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.2s ease, color 0.2s ease; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .drag-active { background-color: #e0e7ff !important; border-color: #4f46e5 !important; }
+        .dark .drag-active { background-color: #1e3a8a !important; border-color: #6366f1 !important; }
+        
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .dark textarea::-webkit-scrollbar-thumb { background-color: #475569; }
+        svg { shape-rendering: geometricPrecision; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 p-4 md:p-8 flex flex-col items-center justify-center transition-colors duration-300">
+
+    <main class="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors duration-300">
+        
+        <header class="bg-white dark:bg-slate-900 px-6 md:px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between gap-4 transition-colors duration-300">
+            <div class="flex flex-row items-center gap-4">
+                <div class="bg-indigo-100 dark:bg-indigo-900/30 p-2.5 rounded-lg text-indigo-600 dark:text-indigo-400 hidden sm:flex items-center justify-center">
+                    <i data-lucide="layers" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white leading-tight flex items-center flex-wrap gap-2">
+                        AI Code Analyzer 
+                        <span class="text-[10px] bg-indigo-600 text-white dark:bg-indigo-500 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shadow-sm">Pro</span>
+                    </h1>
+                    <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Advanced Heuristic & Entropy Engine</p>
+                </div>
+            </div>
+            
+            <button id="themeToggle" class="flex-shrink-0 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none" aria-label="Toggle Dark Mode">
+                <i data-lucide="sun" id="sunIcon" class="hidden w-5 h-5"></i>
+                <i data-lucide="moon" id="moonIcon" class="hidden w-5 h-5"></i>
+            </button>
+        </header>
+
+        <div id="inputSection" class="p-6 md:p-8 fade-in" style="display: block;">
+            
+            <div class="mb-6 flex items-start gap-3 bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
+                <i data-lucide="shield-check" class="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5"></i>
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">100% Secure & Local</h3>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">Runs combined heuristics, AST profiling, and entropy math entirely in your browser. Code never leaves your device.</p>
+                </div>
+            </div>
+            
+            <div id="dropZone" class="w-full border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-xl p-6 text-center mb-6 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex flex-col items-center justify-center gap-2">
+                <i data-lucide="file-code-2" class="w-8 h-8 text-slate-400 dark:text-slate-500"></i>
+                <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">Click to upload or drag and drop</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">.js, .py, .html, .css, .json, .ts, .txt</p>
+                <input type="file" id="fileInput" class="hidden" accept=".js,.py,.html,.css,.java,.c,.cpp,.ts,.txt,.md,.json">
+            </div>
+
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <label for="codeInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Code Snippet</label>
+                    <button id="clearBtn" class="text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" style="display: none;">Clear Input</button>
+                </div>
+                <textarea id="codeInput" class="w-full h-48 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 p-4 rounded-xl border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 font-mono text-sm resize-y outline-none transition-all shadow-inner" placeholder="Paste suspected code or config file here..."></textarea>
+            </div>
+
+            <button id="analyzeBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
+                <i data-lucide="scan-line" class="w-5 h-5"></i>
+                Analyze Source
+            </button>
+        </div>
+
+        <div id="loadingSection" class="p-12 flex flex-col items-center justify-center text-center fade-in" style="display: none;">
+            <i data-lucide="hexagon" class="w-12 h-12 text-indigo-600 dark:text-indigo-500 animate-spin mb-4"></i>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Running Diagnostics...</h2>
+            <div class="h-32 w-full max-w-md bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800 p-4 text-left overflow-hidden shadow-inner flex flex-col justify-end">
+                <div id="loadingLogs" class="text-xs font-mono text-slate-500 dark:text-slate-400 space-y-2"></div>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="p-6 md:p-8 fade-in bg-slate-50 dark:bg-slate-900/50 transition-colors duration-300" style="display: none;">
+            <div class="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex flex-col md:flex-row items-center gap-8">
+                <div id="scoreCircle" class="flex-shrink-0 flex flex-col items-center justify-center w-32 h-32 rounded-full border-4 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-inner relative transition-colors duration-300">
+                    <span id="scoreText" class="text-4xl font-bold text-slate-800 dark:text-white transition-colors duration-300">0%</span>
+                    <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider absolute bottom-4">AI Probable</span>
+                </div>
+                
+                <div class="flex-grow text-center md:text-left">
+                    <h2 id="resultTitle" class="text-2xl font-bold text-slate-900 dark:text-white mb-2 transition-colors duration-300">Analysis Complete</h2>
+                    <p id="resultDesc" class="text-slate-600 dark:text-slate-400 mb-3">Diagnostic modules have processed the input.</p>
+                    <div id="modelTags" class="flex flex-wrap gap-2 justify-center md:justify-start"></div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6 transition-colors duration-300">
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex justify-between items-center">
+                    <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Detailed Flags</h3>
+                    <span class="text-xs font-medium text-slate-500 bg-slate-200 dark:bg-slate-800 px-2.5 py-1 rounded-md" id="flagCount">0 Flags</span>
+                </div>
+                <div class="p-6">
+                    <ul id="flagsList" class="space-y-4"></ul>
+                </div>
+            </div>
+
+            <button id="resetBtn" class="w-full bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                Scan New Snippet
+            </button>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // theme stuff
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+
+        function updateThemeIcons() {
+            if (document.documentElement.classList.contains('dark')) {
+                sunIcon.classList.remove('hidden'); moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden');
+            }
+        }
+        setTimeout(updateThemeIcons, 50);
+
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            updateThemeIcons();
+        });
+
+        // dom nodes
+        const fileInput = document.getElementById('fileInput'), dropZone = document.getElementById('dropZone');
+        const codeInput = document.getElementById('codeInput'), analyzeBtn = document.getElementById('analyzeBtn');
+        const clearBtn = document.getElementById('clearBtn'), inputSection = document.getElementById('inputSection');
+        const loadingSection = document.getElementById('loadingSection'), resultsSection = document.getElementById('resultsSection');
+        const scoreCircle = document.getElementById('scoreCircle'), scoreText = document.getElementById('scoreText');
+        const resultTitle = document.getElementById('resultTitle'), resultDesc = document.getElementById('resultDesc');
+        const flagsList = document.getElementById('flagsList'), resetBtn = document.getElementById('resetBtn');
+        const modelTags = document.getElementById('modelTags'), flagCountBadge = document.getElementById('flagCount');
+        const loadingLogs = document.getElementById('loadingLogs');
+
+        codeInput.addEventListener('input', () => { clearBtn.style.display = codeInput.value.length > 0 ? 'block' : 'none'; });
+        clearBtn.addEventListener('click', () => { codeInput.value = ''; clearBtn.style.display = 'none'; codeInput.focus(); });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-active'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); 
+            dropZone.classList.remove('drag-active');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+            fileInput.value = ''; 
+        });
+
+        function handleFile(file) {
+            if (file.size > 5 * 1024 * 1024) return alert("File too large. Max 5MB.");
+            let reader = new FileReader();
+            reader.onload = (e) => { codeInput.value = e.target.result; clearBtn.style.display = 'block'; };
+            reader.readAsText(file);
+        }
+
+        // math utils
+        function getEntropy(str) {
+            let len = str.length;
+            if (len === 0) return 0;
+            let freq = {};
+            for (let i = 0; i < len; i++) freq[str[i]] = (freq[str[i]] || 0) + 1;
+            let ent = 0;
+            for (let char in freq) {
+                let p = freq[char] / len;
+                ent -= p * Math.log2(p);
+            }
+            return ent;
+        }
+
+        function getBurst(lines) {
+            let lens = lines.map(l => l.length);
+            if (lens.length < 5) return { dev: 0, cv: 0 };
+            let mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+            let variance = lens.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / lens.length;
+            let dev = Math.sqrt(variance);
+            return { dev, cv: mean > 0 ? dev / mean : 0 };
+        }
+
+        // main analysis block
+        function execAnalysis(code) {
+            let score = 0, flags = [], detected = new Set();
+            let rawLines = code.split('\n');
+            let trimmed = rawLines.map(l => l.trim());
+            let lines = trimmed.filter(l => l.length > 3);
+            let codeLow = code.toLowerCase();
+
+            if (code.trim().length < 15) return { score: 0, flags: [{ level: 'info', text: "Input too short for statistical analysis." }], models: [] };
+
+            // check for json/config weirdness
+            let isConfig = /"[a-zA-Z0-9_@\/-]+"\s*:\s*["\{\[\d]/i.test(code) || /"lockfileVersion"\s*:/i.test(code);
+
+            if (isConfig) {
+                if (/"lockfileVersion"\s*:/i.test(code)) {
+                    if (lines.length < 1500) {
+                        score += 75;
+                        flags.push({ level: 'severe', text: "Hallucinated config: Truncated package-lock detected. Real lockfiles are massive." });
+                        detected.add("Workspace Generator");
+                    } else {
+                        flags.push({ level: 'good', text: "Lockfile length looks authentic." });
+                    }
+                }
+                if (/\/\/|\/\*/.test(code)) {
+                    score += 40;
+                    flags.push({ level: 'severe', text: "Invalid JSON: Comments detected inside data structure. Typical LLM behavior." });
+                }
+                if (/"\.\.\."\s*:/.test(code) || /:\s*"\.\.\."/.test(code) || /"rest of the file"/i.test(codeLow)) {
+                    score += 50;
+                    flags.push({ level: 'severe', text: "Truncation marker: Used '...' to skip data blocks." });
+                }
+            }
+
+            // comments & basic structure
+            let cCount = 0, tCount = 0;
+            for (let l of trimmed) {
+                if (l.startsWith('//') || l.startsWith('#') || l.startsWith('
+
+

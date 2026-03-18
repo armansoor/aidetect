@@ -452,6 +452,11 @@
                 score += 20;
                 flags.push({ level: 'warning', text: "Extremely long, dense utility class strings (Tailwind) detected. AI tends to generate monolithic class lists." });
             }
+            if (inlineCssClasses > 10) {
+                score += 25;
+                flags.push({ level: 'severe', text: "Massive reliance on inline utility classes. This boilerplate-heavy layout structure is highly characteristic of zero-shot AI generation." });
+                detected.add("V0 / Tailwind AI");
+            }
 
             if (/\b(certainly|here is|as an ai|i can help|as requested|based on your request|here's the updated code)\b/i.test(codeLow)) {
                 score += 80;
@@ -531,6 +536,12 @@
             if (humanScoreTotal === 0 && lines.length > 30) {
                 score += 25;
                 flags.push({ level: 'warning', text: "Absence of any typical human messiness (sloppy comments, dead code, uneven whitespace) in a sizable script. Highly sterile." });
+            }
+
+            // If there's overwhelming evidence of AI (like massive Tailwind usage or Claude leakage), clamp the minimum score
+            if (detected.size > 0 && score < 40) {
+                score = 65;
+                flags.push({ level: 'info', text: "Strong specific AI patterns matched. Overriding confusing entropy/variance metrics." });
             }
 
             score = Math.max(0, Math.min(100, score));

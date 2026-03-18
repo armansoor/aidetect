@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     
+    <link href="style.css" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -31,20 +32,6 @@
             }
         } catch (err) { console.error("theme issue:", err); }
     </script>
-    <style>
-        body { font-family: 'Inter', sans-serif; transition: background-color 0.2s ease, color 0.2s ease; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .drag-active { background-color: #e0e7ff !important; border-color: #4f46e5 !important; }
-        .dark .drag-active { background-color: #1e3a8a !important; border-color: #6366f1 !important; }
-        
-        textarea::-webkit-scrollbar { width: 8px; }
-        textarea::-webkit-scrollbar-track { background: transparent; }
-        textarea::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-        .dark textarea::-webkit-scrollbar-thumb { background-color: #475569; }
-        svg { shape-rendering: geometricPrecision; }
-    </style>
 </head>
 <body class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 p-4 md:p-8 flex flex-col items-center justify-center transition-colors duration-300">
 

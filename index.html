@@ -76,9 +76,12 @@
             </div>
 
             <div class="mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <label for="codeInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Code Snippet</label>
-                    <button id="clearBtn" class="text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" style="display: none;">Clear Input</button>
+                <div class="flex flex-col gap-1 mb-2">
+                    <div class="flex justify-between items-center">
+                        <label for="codeInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Code Snippet</label>
+                        <button id="clearBtn" class="text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" style="display: none;">Clear Input</button>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Please provide complete code snippets. Avoid truncated code, as it is highly impossible for the system to detect if it is AI or human.</p>
                 </div>
                 <textarea id="codeInput" class="w-full h-48 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 p-4 rounded-xl border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 font-mono text-sm resize-y outline-none transition-all shadow-inner" placeholder="Paste suspected code or config file here..."></textarea>
             </div>
@@ -311,7 +314,7 @@
             let lines = trimmed.filter(l => l.length > 3);
             let codeLow = code.toLowerCase();
 
-            if (code.trim().length < 15) return { score: 0, flags: [{ level: 'info', text: "Input too short for statistical analysis." }], models: [] };
+            if (code.trim().length < 15) return { score: 0, flags: [{ level: 'info', text: "Input too short for statistical analysis. Please provide complete code snippets. Avoid truncated code, as it is highly impossible for the system to detect if it is AI or human." }], models: [] };
 
             // check for json/config weirdness
             let isConfig = /"[a-zA-Z0-9_@\/-]+"\s*:\s*["\{\[\d]/i.test(code) || /"lockfileVersion"\s*:/i.test(code);

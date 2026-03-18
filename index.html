@@ -140,6 +140,10 @@
                         </li>
                         <li class="flex items-start gap-3">
                             <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Modern Syntax Fingerprinting:</strong> Detects excessive modern syntactic sugar: long utility class lists (Tailwind), heavy arrow functions, `.map().filter()` chains, and strict `let/const` exclusivity.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
                             <div><strong>Advanced Syntax Overkill:</strong> Detects excessive use of modern syntax (optional chaining, complex list comprehensions, heavy try-catch blocks) in short, trivial files.</div>
                         </li>
                         <li class="flex items-start gap-3">
@@ -420,6 +424,33 @@
             if (boilerplateFuncs > 3 && lines.length < 50) {
                 score += 20;
                 flags.push({ level: 'warning', text: "High frequency of generic or boilerplate function prefixes (handle*, setup*, etc.)." });
+            }
+
+            // Modern JS overkill
+            let letConstCount = (code.match(/\b(let|const)\b/g) || []).length;
+            let varCount = (code.match(/\bvar\b/g) || []).length;
+            let arrowFuncCount = (code.match(/=>/g) || []).length;
+            let arrayMethodChain = (code.match(/\.(map|filter|reduce|forEach)\s*\(.*\)\.(map|filter|reduce|forEach)/g) || []).length;
+
+            if (letConstCount > 10 && varCount === 0 && lines.length > 30) {
+                score += 15;
+                flags.push({ level: 'info', text: "Strict adherence to ES6 block scoping (let/const) with zero 'var'. Typical of AI-generated modern JS." });
+            }
+
+            if (arrowFuncCount > 5 && lines.length < 100) {
+                score += 10;
+                flags.push({ level: 'info', text: "High density of arrow functions. AI heavily favors this modern syntax." });
+            }
+
+            if (arrayMethodChain > 0) {
+                score += 15;
+                flags.push({ level: 'warning', text: "Chained array methods (.map().filter()) detected. A common functional pattern heavily preferred by LLMs." });
+            }
+
+            let inlineCssClasses = (code.match(/class="([a-zA-Z0-9-:]+\s){5,}[a-zA-Z0-9-:]+"/g) || []).length;
+            if (inlineCssClasses > 3) {
+                score += 20;
+                flags.push({ level: 'warning', text: "Extremely long, dense utility class strings (Tailwind) detected. AI tends to generate monolithic class lists." });
             }
 
             if (/\b(certainly|here is|as an ai|i can help|as requested|based on your request|here's the updated code)\b/i.test(codeLow)) {

@@ -557,7 +557,17 @@
                 flags.push({ level: 'info', text: "Strong specific AI patterns matched. Overriding confusing entropy/variance metrics." });
             }
 
-            score = Math.max(0, Math.min(100, score));
+            // Introduce an organic, deterministic offset based on continuous metrics
+            // This turns round scores (like 40 or 60) into exact numbers (like 43 or 58)
+            let organicOffset = (wordEnt * 1.7) + (charEnt * 2.3) + (burst.cv * 5);
+            // Limit the offset to +/- 5 points so it doesn't radically change the heuristic outcome
+            organicOffset = (organicOffset % 10) - 5;
+
+            score += organicOffset;
+
+            // Round the score so it displays as an exact whole number
+            score = Math.round(Math.max(0, Math.min(100, score)));
+
             if (detected.size === 0 && score > 50) detected.add("Generic LLM");
 
             return { score, flags, models: Array.from(detected) };

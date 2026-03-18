@@ -61,6 +61,7 @@
                         <span class="text-[10px] bg-indigo-600 text-white dark:bg-indigo-500 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase shadow-sm">Pro</span>
                     </h1>
                     <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Advanced Heuristic & Entropy Engine</p>
+                    <p class="text-[10px] italic text-indigo-500 dark:text-indigo-400 mt-1 font-medium">"A Vibe coded website to detect Vibe coded website"</p>
                 </div>
             </div>
             
@@ -95,10 +96,63 @@
                 <textarea id="codeInput" class="w-full h-48 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 p-4 rounded-xl border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 font-mono text-sm resize-y outline-none transition-all shadow-inner" placeholder="Paste suspected code or config file here..."></textarea>
             </div>
 
-            <button id="analyzeBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
-                <i data-lucide="scan-line" class="w-5 h-5"></i>
-                Analyze Source
-            </button>
+            <div class="flex gap-4">
+                <button id="viewRulesBtn" class="w-1/3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                    Rules
+                </button>
+                <button id="analyzeBtn" class="w-2/3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <i data-lucide="scan-line" class="w-5 h-5"></i>
+                    Analyze Source
+                </button>
+            </div>
+        </div>
+
+        <!-- Rules Modal -->
+        <div id="rulesModal" class="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="microscope" class="w-5 h-5 text-indigo-500"></i>
+                        Active Detection Rules
+                    </h2>
+                    <button id="closeRulesBtn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar">
+                    <ul class="space-y-4 text-sm text-slate-700 dark:text-slate-300">
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Comment & Structure Analysis:</strong> Flags over-explaining ("Step 1:", "Note:"), excessive comments relative to code, and perfect boilerplate formatting.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Line Length Variance (Burstiness):</strong> Evaluates the standard deviation of line lengths. AI code tends to be highly uniform and visually "blocky".</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Lexical Entropy:</strong> Measures vocabulary variation. Repetitive tokens, generic names (temp, item, val), and repetitive structures decrease entropy.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Conversational Leakage:</strong> Scans for exact phrases LLMs output when copy-pasted directly (e.g., "Certainly!", "Here is the updated code").</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Advanced Syntax Overkill:</strong> Detects excessive use of modern syntax (optional chaining, complex list comprehensions, heavy try-catch blocks) in short, trivial files.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Perfect Formatting:</strong> AI rarely leaves trailing whitespaces or inconsistent blank lines. "Too perfect" code adds to the AI probability.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Human Indicators:</strong> Detects messy behaviors like multiple comment slashes (////), commented-out code blocks, and aggressive debug statements (console.log('wtf')).</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <div id="loadingSection" class="p-12 flex flex-col items-center justify-center text-center fade-in" style="display: none;">
@@ -173,6 +227,26 @@
         const flagsList = document.getElementById('flagsList'), resetBtn = document.getElementById('resetBtn');
         const modelTags = document.getElementById('modelTags'), flagCountBadge = document.getElementById('flagCount');
         const loadingLogs = document.getElementById('loadingLogs');
+
+        // rules modal nodes
+        const viewRulesBtn = document.getElementById('viewRulesBtn');
+        const closeRulesBtn = document.getElementById('closeRulesBtn');
+        const rulesModal = document.getElementById('rulesModal');
+
+        viewRulesBtn.addEventListener('click', () => {
+            rulesModal.classList.remove('opacity-0', 'pointer-events-none');
+            rulesModal.firstElementChild.classList.remove('scale-95');
+        });
+
+        const closeRules = () => {
+            rulesModal.classList.add('opacity-0', 'pointer-events-none');
+            rulesModal.firstElementChild.classList.add('scale-95');
+        };
+
+        closeRulesBtn.addEventListener('click', closeRules);
+        rulesModal.addEventListener('click', (e) => {
+            if (e.target === rulesModal) closeRules();
+        });
 
         codeInput.addEventListener('input', () => { clearBtn.style.display = codeInput.value.length > 0 ? 'block' : 'none'; });
         clearBtn.addEventListener('click', () => { codeInput.value = ''; clearBtn.style.display = 'none'; codeInput.focus(); });
@@ -279,8 +353,9 @@
             let cCount = 0, tCount = 0;
             let tutorialComments = 0;
             let boilerplateComments = 0;
+            let jsDocComments = 0;
             for (let l of trimmed) {
-                if (l.startsWith('//') || l.startsWith('#') || l.startsWith('/*') || l.startsWith('<!--')) {
+                if (l.startsWith('//') || l.startsWith('#') || l.startsWith('/*') || l.startsWith('*') || l.startsWith('<!--')) {
                     cCount++;
                     let lLow = l.toLowerCase();
                     if (/step \d|note:|important:|todo|here we|this function|helper function|add your code here/i.test(lLow)) {
@@ -288,6 +363,9 @@
                     }
                     if (/^(?:\/\/|#|\/\*)\s*-{3,}\s*[A-Z\s&]+-{3,}\s*$/.test(l)) {
                         boilerplateComments++;
+                    }
+                    if (l.startsWith('* @param') || l.startsWith('* @returns') || l.startsWith('* @type')) {
+                        jsDocComments++;
                     }
                 }
                 tCount++;
@@ -304,6 +382,10 @@
             if (boilerplateComments > 1) {
                 score += 40;
                 flags.push({ level: 'severe', text: "Highly structured or conversational boilerplate comments detected. Classic LLM output." });
+            }
+            if (jsDocComments > 3 && lines.length < 50) {
+                score += 20;
+                flags.push({ level: 'warning', text: "High density of formal JSDoc/docstrings in a very short script. Often over-explained by AI." });
             }
 
             // 2. Burstiness / Line length variance
@@ -365,6 +447,35 @@
                 flags.push({ level: 'warning', text: "Excessive imports for a small file size." });
             }
 
+            let optChainCount = (code.match(/\?\./g) || []).length;
+            let nullCoalesceCount = (code.match(/\?\?/g) || []).length;
+            let awaitCount = (code.match(/\bawait\s+/g) || []).length;
+
+            if ((optChainCount > 4 || nullCoalesceCount > 4) && lines.length < 50) {
+                score += 20;
+                flags.push({ level: 'warning', text: "Heavy use of advanced optional chaining/nullish coalescing relative to script size. High likelihood of modern AI generation." });
+            }
+            if (awaitCount > 5 && tryCatchCount === 0 && lines.length < 60) {
+                score += 15;
+                flags.push({ level: 'warning', text: "High use of async/await without try/catch handling. Often generated by simple AI prompts." });
+            }
+
+            // Formatting Perfection (AI tends to leave no trailing spaces and uniform blank lines)
+            let trailingSpaces = (code.match(/[ \t]+$/gm) || []).length;
+            if (trailingSpaces === 0 && lines.length > 20) {
+                score += 15;
+                flags.push({ level: 'info', text: "Zero trailing whitespaces found in multi-line code. Extremely uniform/auto-formatted, typical of AI generation." });
+            } else if (trailingSpaces > 5) {
+                score -= 15;
+                flags.push({ level: 'good', text: "Inconsistent trailing whitespaces found. Suggests manual typing." });
+            }
+
+            // Error messages politeness
+            if (/throw new Error\(['"`](Please|Kindly|Sorry)/i.test(code) || /console\.error\(['"`](Please|Kindly|Sorry)/i.test(code)) {
+                score += 30;
+                flags.push({ level: 'severe', text: "Polite or over-descriptive error messages ('Please', 'Kindly') detected. Highly characteristic of AI." });
+            }
+
             // 6. Human indicators (messiness)
             let randomStrings = (code.match(/(console\.log|print|System\.out\.println)\(["'](asdf|here|test|123|qwer|wtf|fuck|shit)["']\)/gi) || []).length;
             if (randomStrings > 0) {
@@ -382,6 +493,13 @@
             if (multipleCommentSlashes > 0) {
                 score -= 10;
                 flags.push({ level: 'good', text: "Sloppy comment markers ('////') detected. Unlikely from an AI." });
+            }
+
+            // Tweak baseline score if absolutely NO human indicators were found in a moderate sized file
+            let humanScoreTotal = randomStrings + commentedOutCode + multipleCommentSlashes + (trailingSpaces > 5 ? 1 : 0);
+            if (humanScoreTotal === 0 && lines.length > 30) {
+                score += 25;
+                flags.push({ level: 'warning', text: "Absence of any typical human messiness (sloppy comments, dead code, uneven whitespace) in a sizable script. Highly sterile." });
             }
 
             score = Math.max(0, Math.min(100, score));

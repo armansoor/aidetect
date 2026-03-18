@@ -1,3 +1,26 @@
+// check if text is likely code
+function isLikelyCode(text) {
+    if (!text || text.trim().length === 0) return false;
+
+    // Check for common programming symbols
+    // Removed basic punctuation (. , ? !) which are common in plain text
+    let codeChars = text.match(/[{}\[\]()<>;:+\-*/=&|~^%@\\]/g);
+    let codeCharCount = codeChars ? codeChars.length : 0;
+
+    // Check for common programming keywords across various languages
+    let keywords = text.match(/\b(function|class|def|var|let|const|if|else|elif|return|import|from|export|public|private|protected|struct|type|interface|void|int|string|bool|boolean|char|float|double|console|print|echo|namespace|using|include|require|module|exports|await|async|yield|switch|case|break|continue|default|try|catch|finally|throw|new|this|super|extends|implements|package|html|body|div|span|href|src|php|def|pass|lambda)\b/gi);
+    let keywordCount = keywords ? keywords.length : 0;
+
+    let textLengthNoSpaces = text.replace(/\s/g, '').length;
+    if (textLengthNoSpaces === 0) return false;
+
+    // Calculate a density score.
+    let density = (codeCharCount + (keywordCount * 2)) / textLengthNoSpaces;
+
+    // If the density of code-specific elements is high enough, it's code
+    return density > 0.08;
+}
+
 // math utils
 function getEntropy(str) {
     let len = str.length;

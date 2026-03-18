@@ -306,6 +306,29 @@
             return { dev, cv: mean > 0 ? dev / mean : 0 };
         }
 
+        // check if text is likely code
+        function isLikelyCode(text) {
+            if (!text || text.trim().length === 0) return false;
+
+            // Check for common programming symbols
+            // Removed basic punctuation (. , ? !) which are common in plain text
+            let codeChars = text.match(/[{}\[\]()<>;:+\-*/=&|~^%@\\]/g);
+            let codeCharCount = codeChars ? codeChars.length : 0;
+
+            // Check for common programming keywords across various languages
+            let keywords = text.match(/\b(function|class|def|var|let|const|if|else|elif|return|import|from|export|public|private|protected|struct|type|interface|void|int|string|bool|boolean|char|float|double|console|print|echo|namespace|using|include|require|module|exports|await|async|yield|switch|case|break|continue|default|try|catch|finally|throw|new|this|super|extends|implements|package|html|body|div|span|href|src|php|def|pass|lambda)\b/gi);
+            let keywordCount = keywords ? keywords.length : 0;
+
+            let textLengthNoSpaces = text.replace(/\s/g, '').length;
+            if (textLengthNoSpaces === 0) return false;
+
+            // Calculate a density score.
+            let density = (codeCharCount + (keywordCount * 2)) / textLengthNoSpaces;
+
+            // If the density of code-specific elements is high enough, it's code
+            return density > 0.08;
+        }
+
         // main analysis block
         function execAnalysis(code) {
             let score = 0, flags = [], detected = new Set();
@@ -542,6 +565,11 @@
         analyzeBtn.addEventListener('click', () => {
             let code = codeInput.value;
             if (!code || code.trim().length === 0) return alert("Please enter some code to analyze.");
+
+            // Check if the input is likely plain text rather than code
+            if (typeof isLikelyCode === 'function' && !isLikelyCode(code)) {
+                return alert("It looks like you entered plain text. Please enter valid code to analyze.");
+            }
 
             inputSection.style.display = 'none';
             loadingSection.style.display = 'flex';

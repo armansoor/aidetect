@@ -78,6 +78,11 @@ analyzeBtn.addEventListener('click', () => {
     let code = codeInput.value;
     if (!code || code.trim().length === 0) return alert("Please enter some code to analyze.");
 
+    // Check if the input is likely plain text rather than code
+    if (typeof isLikelyCode === 'function' && !isLikelyCode(code)) {
+        return alert("It looks like you entered plain text. Please enter valid code to analyze.");
+    }
+
     inputSection.style.display = 'none';
     loadingSection.style.display = 'flex';
     loadingLogs.innerHTML = '';

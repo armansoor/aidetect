@@ -145,9 +145,12 @@ analyzeBtn.addEventListener('click', () => {
         }
 
         flagsList.innerHTML = '';
-        flagCountBadge.innerText = `${result.flags.length} Flag${result.flags.length !== 1 ? 's' : ''}`;
+        flagCountBadge.textContent = `${result.flags.length} Flag${result.flags.length !== 1 ? 's' : ''}`;
         if (result.flags.length === 0) {
-            flagsList.innerHTML = `<li class="text-sm text-slate-500 dark:text-slate-400 italic">No significant flags detected.</li>`;
+            let li = document.createElement('li');
+            li.className = "text-sm text-slate-500 dark:text-slate-400 italic";
+            li.textContent = "No significant flags detected.";
+            flagsList.appendChild(li);
         } else {
             result.flags.forEach(f => {
                 let li = document.createElement('li');

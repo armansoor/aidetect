@@ -169,7 +169,8 @@ analyzeBtn.addEventListener('click', () => {
                     colorClass = 'text-blue-600 dark:text-blue-400';
                 }
 
-                li.innerHTML = `<div class="flex-shrink-0 ${colorClass}">${icon}</div><div class="text-slate-700 dark:text-slate-300 leading-relaxed">${f.text}</div>`;
+                li.innerHTML = `<div class="flex-shrink-0 ${colorClass}">${icon}</div><div class="text-slate-700 dark:text-slate-300 leading-relaxed flag-text-content"></div>`;
+                li.querySelector('.flag-text-content').textContent = f.text;
                 flagsList.appendChild(li);
             });
             lucide.createIcons(); // Re-render icons for dynamic content

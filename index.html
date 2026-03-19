@@ -139,11 +139,27 @@
                         </li>
                         <li class="flex items-start gap-3">
                             <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
-                            <div><strong>Perfect Formatting:</strong> AI rarely leaves trailing whitespaces or inconsistent blank lines. "Too perfect" code adds to the AI probability.</div>
+                            <div><strong>Perfect Formatting & Quoting:</strong> AI rarely leaves trailing whitespaces or inconsistent blank lines. Also checks for perfect variable quoting in bash.</div>
                         </li>
                         <li class="flex items-start gap-3">
                             <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
                             <div><strong>Human Indicators:</strong> Detects messy behaviors like multiple comment slashes (////), commented-out code blocks, and aggressive debug statements (console.log('wtf')).</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Lexical & Syntax:</strong> Looks for leftover prompt text ("write a function"), textbook placeholders ("YOUR_API_KEY_HERE"), perfectly symmetrical code blocks, and sequential naming (userList, userCount).</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Language-Specific Artifacts:</strong> Detects excessive Python `typing`, React exhaustive dependencies, Java boilerplate getters/setters, and redundant C++ guards.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Mathematical & Statistical:</strong> Analyzes cyclomatic complexity vs line count, operator density, and calculates variable name length variance.</div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                            <div><strong>Meta Heuristics:</strong> Identifies mismatched step comments, "Note:" bullet points, hidden affirmations, and specific AI apologies.</div>
                         </li>
                     </ul>
                 </div>

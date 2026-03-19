@@ -98,6 +98,38 @@ function execAnalysis(code) {
 
     // Advanced code heuristics
 
+    // New Heuristic 12: The "Apology" Leak
+    if (/\b(sorry for the confusion|my apologies, here is|apologies for the oversight)\b/i.test(codeLow)) {
+        score += 80;
+        flags.push({ level: 'severe', text: "Apology conversational leakage detected. Strong AI indicator." });
+        detected.add("ChatGPT / Claude");
+    }
+
+    // New Heuristic 13: The "Explanation" Leak
+    if (/^(?:\/\/|#|--)\s*(let's break this down|explanation:|here is how it works:)/mi.test(code)) {
+        score += 60;
+        flags.push({ level: 'severe', text: "Conversational explanation leakage in comments detected." });
+    }
+
+    // New Heuristic 14: Dependencies warning
+    if (/^(?:\/\/|#|--)\s*(requires?:?\s*(npm|pip|yarn)\s+install|make sure to run:?\s*(npm|pip|yarn))/mi.test(code)) {
+        score += 50;
+        flags.push({ level: 'severe', text: "Inline instructions to install dependencies detected. Typical AI generation behavior." });
+    }
+
+    // New Heuristic 17: Snippet Wrappers
+    if (/^(?:\/\/|#|--)\s*(example usage:|--- begin snippet ---|--- end snippet ---)/mi.test(code)) {
+        score += 40;
+        flags.push({ level: 'severe', text: "Snippet/Example wrapper comments detected. Common in AI output." });
+    }
+
+    // New Heuristic 3: "As an AI" specific leaks
+    if (/as an ai language model|i cannot execute code|i don't have access to/i.test(codeLow)) {
+        score += 90;
+        flags.push({ level: 'severe', text: "Explicit 'As an AI' disclaimer leakage detected." });
+        detected.add("Generic LLM");
+    }
+
     // 1. Comments & Structure
     let cCount = 0, tCount = 0;
     let tutorialComments = 0;
@@ -127,6 +159,13 @@ function execAnalysis(code) {
         score += 30;
         flags.push({ level: 'severe', text: "Tutorial-style commentary ('Step 1', 'Note:', 'Here we...'). Classic LLM output." });
         detected.add("GPT-4");
+    }
+
+    // New Heuristic 5: Exhaustive Javadoc/Doxygen for trivial methods
+    let exhaustiveDocs = (code.match(/\/\*\*[\s\S]*?@param[\s\S]*?@return[\s\S]*?\*\/\s*(?:public|private|protected)?\s*\w+\s+\w+\s*\(/g) || []).length;
+    if (exhaustiveDocs > 2 && lines.length < 100) {
+        score += 30;
+        flags.push({ level: 'warning', text: "High density of exhaustive Javadoc/Doxygen comments on methods. AI often over-documents." });
     }
     if (boilerplateComments > 1) {
         score += 40;
@@ -160,6 +199,21 @@ function execAnalysis(code) {
     }
 
     // 4. Boilerplate / Generic Naming / AI Fingerprints
+
+    // New Heuristic 20: Alphabetical sorting (simple heuristic looking for 4+ sorted consecutive lines of imports or dict keys)
+    let sortedLinesMatch = 0;
+    for (let i = 0; i < lines.length - 3; i++) {
+        if (lines[i].startsWith('import ') && lines[i+1].startsWith('import ') && lines[i+2].startsWith('import ') && lines[i+3].startsWith('import ')) {
+            if (lines[i] < lines[i+1] && lines[i+1] < lines[i+2] && lines[i+2] < lines[i+3]) {
+                sortedLinesMatch++;
+            }
+        }
+    }
+    if (sortedLinesMatch > 0) {
+        score += 10;
+        flags.push({ level: 'info', text: "Perfectly sorted import blocks detected. AI tends to generate sorted lists." });
+    }
+
     let genericVars = (code.match(/\b(foo|bar|baz|result|temp|data|val|item|element|obj)\b/gi) || []).length;
     let boilerplateFuncs = (code.match(/\b(handle[A-Z]|setup[A-Z]|init[A-Z]|load[A-Z]|fetch[A-Z])/g) || []).length;
     if (genericVars > 5 && lines.length < 50) {
@@ -181,6 +235,13 @@ function execAnalysis(code) {
     if (markdownBlocks > 0) {
         score += 40;
         flags.push({ level: 'severe', text: "Markdown code block ticks detected inside source. Artifact of copy-pasting from an LLM UI." });
+    }
+
+    // New Heuristic 19: Excessive try-catch blocks logging politely
+    let politeCatch = (code.match(/catch\s*\(.*?\)\s*\{\s*(console\.error|print|logger\.\w+)\(["'](failed to|an error occurred while|apologies,).*?["']/gi) || []).length;
+    if (politeCatch > 0) {
+        score += 35;
+        flags.push({ level: 'severe', text: "Polite/Over-descriptive error logging in catch blocks detected." });
     }
 
     // 5. Over-engineering (High try-catch or import ratio to actual code)
@@ -217,6 +278,89 @@ function execAnalysis(code) {
     } else if (trailingSpaces > 5) {
         score -= 15;
         flags.push({ level: 'good', text: "Inconsistent trailing whitespaces found. Suggests manual typing." });
+    }
+
+    // New Heuristic 1: Over-engineered Python Type Hinting
+    let pythonTypeHints = (code.match(/def\s+\w+\s*\([^)]*:\s*[A-Z][a-zA-Z0-9_\[\]\s,]+[^)]*\)\s*->\s*[A-Z][a-zA-Z0-9_\[\]\s,]+:/g) || []).length;
+    if (pythonTypeHints > 2 && lines.length < 50) {
+        score += 25;
+        flags.push({ level: 'warning', text: "Unusually exhaustive Python type hinting for a short script. Typical of AI over-engineering." });
+    }
+
+    // New Heuristic 2: pass and ... placeholders in Python
+    let pythonPlaceholders = (code.match(/def\s+\w+\s*\([^)]*\)\s*(?:->\s*[^:]+)?:\s*(?:"""[^"]*"""|'''[^']*''')?\s*(pass|\.\.\.)\s/g) || []).length;
+    if (pythonPlaceholders > 0) {
+        score += 35;
+        flags.push({ level: 'severe', text: "Empty function scaffolding (pass/...) detected. Typical of AI-generated skeleton code." });
+    }
+
+    // New Heuristic 4: Redundant if __name__ == "__main__"
+    if (/if\s+__name__\s*==\s*["']__main__["']:/g.test(code) && lines.length < 20) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Redundant __main__ block in a very short Python script." });
+    }
+
+    // New Heuristic 6: "Include everything" C++ headers
+    let cppIncludes = (code.match(/#include\s+<[^>]+>/g) || []).length;
+    if (cppIncludes > 6 && lines.length < 30) {
+        score += 25;
+        flags.push({ level: 'warning', text: "Excessive C/C++ includes for a very short file. AI standard boilerplate behavior." });
+    }
+
+    // New Heuristic 7: System.out.println spam
+    let sysoutSpam = (code.match(/System\.out\.println\(/g) || []).length;
+    if (sysoutSpam > 5 && lines.length < 40) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Heavy System.out.println logging. AI tends to over-log in Java." });
+    }
+
+    // New Heuristic 8: Explicit this. keyword spam
+    let thisSpam = (code.match(/\bthis\.\w+\s*=/g) || []).length;
+    if (thisSpam > 10 && lines.length < 50) {
+        score += 15;
+        flags.push({ level: 'info', text: "High frequency of 'this.' assignments. AI often over-qualifies variables." });
+    }
+
+    // New Heuristic 9: Overly verbose SQL aliases
+    let sqlVerboseAliases = (code.match(/(FROM|JOIN)\s+(\w+)\s+(?:AS\s+)?(\w+_\w+|\w+1)/gi) || []).length;
+    if (sqlVerboseAliases > 2) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Verbose or perfectly numbered SQL aliases detected. AI models often generate extremely verbose aliases." });
+    }
+
+    // New Heuristic 10: SQL Capitalization perfection
+    let sqlCaps = (code.match(/\b(SELECT|FROM|WHERE|INNER JOIN|LEFT JOIN|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET)\b/g) || []).length;
+    let sqlLower = (code.match(/\b(select|from|where|inner join|left join|group by|order by|having|limit|offset)\b/g) || []).length;
+    if (sqlCaps > 5 && sqlLower === 0) {
+        score += 15;
+        flags.push({ level: 'info', text: "Perfect SQL keyword capitalization. Human ad-hoc queries are typically messier." });
+    }
+
+    // New Heuristic 11: Dummy data leakage
+    if (/john doe|jane smith|acme corp|123 fake st/i.test(codeLow)) {
+        score += 40;
+        flags.push({ level: 'severe', text: "Classic dummy data (John Doe, Acme Corp) detected. High probability of AI generation." });
+    }
+
+    // New Heuristic 15: Over-defensive Null Checking
+    let overDefensive = (code.match(/if\s*\(\s*\w+\s*!=\s*null\s*&&\s*\w+\s*!==?\s*undefined\s*&&\s*\w+\.length\s*>\s*0\s*\)/g) || []).length;
+    if (overDefensive > 0) {
+        score += 25;
+        flags.push({ level: 'warning', text: "Over-defensive null/length checking detected. AI often generates highly defensive conditional checks." });
+    }
+
+    // New Heuristic 16: Regex overkill
+    let complexRegex = (code.match(/\/[^/]{30,}\//g) || []).length;
+    if (complexRegex > 0 && /email|password|url/i.test(codeLow)) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Extremely complex regex for standard validation detected. AI usually opts for textbook monolithic regexes." });
+    }
+
+    // New Heuristic 18: Unused overly complex helper functions
+    let internalHelpers = (code.match(/function\s+_[a-zA-Z0-9_]+\s*\(/g) || code.match(/def\s+_[a-zA-Z0-9_]+\s*\(/g) || []).length;
+    if (internalHelpers > 2 && lines.length < 60) {
+        score += 15;
+        flags.push({ level: 'info', text: "Multiple internal-style helper functions (prefixed with _) in a short script. Often generated by AI for structure." });
     }
 
     // Error messages politeness

@@ -98,6 +98,209 @@ function execAnalysis(code) {
 
     // Advanced code heuristics
 
+    // --- Newly Added 30 Heuristics (1-10) Lexical & Syntax ---
+    // 1. Leftover Prompt Text
+    if (/(?:write a function|prompt:|create a script that|how do i|please provide)/i.test(codeLow)) {
+        score += 50;
+        flags.push({ level: 'severe', text: "Leftover prompt text detected. Strong indicator of copied AI output." });
+    }
+
+    // 2. Inline Comment Overkill (checked down in structure loop)
+
+    // 3. Redundant Type-Checking
+    let redundantTypeCheck = (code.match(/typeof\s+\w+\s*===\s*['"]\w+['"]\s*&&\s*\w+\s*!==\s*null/g) || []).length;
+    if (redundantTypeCheck > 1) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Redundant or overly explicit type checking detected. Common in AI output." });
+    }
+
+    // 4. Placeholder Values
+    if (/YOUR_API_KEY_HERE|https:\/\/api\.example\.com|password123/i.test(code)) {
+        score += 40;
+        flags.push({ level: 'severe', text: "Textbook placeholder values detected (e.g., YOUR_API_KEY_HERE)." });
+    }
+
+    // 5. From-Scratch Implementations (e.g. custom deep clone)
+    if (/function\s+deepClone/i.test(code) || /def\s+deep_clone/i.test(codeLow)) {
+        score += 15;
+        flags.push({ level: 'info', text: "Implementation of a standard utility from scratch (e.g., deep clone) detected." });
+    }
+
+    // 6. Defensive Programming Overkill
+    let defensiveOverkill = (code.match(/if\s*\(\s*\w+\s*&&\s*Array\.isArray\(\w+\)\s*&&\s*\w+\.length\s*>\s*0/g) || []).length;
+    if (defensiveOverkill > 0) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Excessive defensive programming in a single condition." });
+    }
+
+    // 7. Perfect Symmetrical Code
+    let ifCount = (code.match(/\bif\s*\(/g) || []).length;
+    let elseIfCount = (code.match(/\belse if\s*\(/g) || []).length;
+    let elseCount = (code.match(/\belse\s*\{/g) || []).length;
+    if (ifCount > 2 && ifCount === elseIfCount && ifCount === elseCount && lines.length < 50) {
+        score += 15;
+        flags.push({ level: 'info', text: "Perfectly symmetrical if/else-if/else structures detected." });
+    }
+
+    // 8. Summary Comments
+    if (/(?:in conclusion,|this script provides|to summarize,)/i.test(codeLow)) {
+        score += 30;
+        flags.push({ level: 'severe', text: "Conversational summary comment detected at the end of the script." });
+    }
+
+    // 9. Unused Complex Imports (we just check if obscure ones are present, actual unused is hard with regex)
+    if (/\bimport\s+.*\b(?:crypto|hashlib|xmltodict)\b/i.test(code) && lines.length < 20) {
+        score += 15;
+        flags.push({ level: 'warning', text: "Obscure/complex imports detected in a very short file." });
+    }
+
+    // 10. Sequential Naming Combinations
+    if (/\buserList\b.*\buserCount\b.*\bfilteredUsers\b/i.test(code) || /\bitemList\b.*\bitemCount\b/i.test(code)) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Textbook sequential variable naming combination detected." });
+    }
+
+    // --- Newly Added 30 Heuristics (11-20) Language-Specific ---
+    // 11. Python - typing Overuse
+    let pythonTyping = (code.match(/from\s+typing\s+import\s+(?:List|Dict|Any|Tuple|Optional|Union)/g) || []).length;
+    if (pythonTyping > 0 && lines.length < 30) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Heavy use of Python typing module in a short script." });
+    }
+
+    // 12. JavaScript - Minified Artifacts
+    if (/\bvoid 0\b/g.test(code) && lines.length > 5 && lines.length < 50) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Use of 'void 0' (minified artifact) in non-minified modern code." });
+    }
+
+    // 13. HTML/CSS - Verbose BEM
+    let bemClasses = (code.match(/class=['"][a-z0-9]+__[a-z0-9]+--[a-z0-9]+['"]/g) || []).length;
+    if (bemClasses > 5 && lines.length < 40) {
+        score += 15;
+        flags.push({ level: 'info', text: "Verbose BEM class naming on small scale." });
+    }
+
+    // 14. SQL - Verbose Joins
+    if (/\bLEFT OUTER JOIN\b/i.test(code) || /\bINNER JOIN\b/i.test(code)) {
+        score += 10;
+        flags.push({ level: 'info', text: "Verbose SQL joins (e.g. LEFT OUTER JOIN instead of LEFT JOIN)." });
+    }
+
+    // 15. C++ - Redundant Guards
+    if (/#pragma once/i.test(code) && /#ifndef\s+\w+/i.test(code) && /#define\s+\w+/i.test(code)) {
+        score += 25;
+        flags.push({ level: 'warning', text: "Redundant C++ include guards (#pragma once AND #ifndef) in the same file." });
+    }
+
+    // 16. Java - Excessive Getters/Setters
+    let javaGetSet = (code.match(/public\s+\w+\s+get\w+\(\)\s*\{/g) || []).length + (code.match(/public\s+void\s+set\w+\([^)]+\)\s*\{/g) || []).length;
+    if (javaGetSet > 6 && lines.length < 60) {
+        score += 15;
+        flags.push({ level: 'info', text: "Perfect boilerplate getters/setters detected." });
+    }
+
+    // 17. React/Frontend - Hallucinated Dependencies
+    let reactDeps = (code.match(/useEffect\(\s*\(\)\s*=>\s*\{.*?\},\s*\[(.*?)\]\s*\)/s) || [])[1];
+    if (reactDeps && reactDeps.split(',').length > 4) {
+        score += 15;
+        flags.push({ level: 'warning', text: "Extremely exhaustive React useEffect dependency array." });
+    }
+
+    // 18. Python - Redundant else
+    if (/(?:for|while)\s+.*:.*\n(?:.|\n)*?else:/g.test(code)) {
+        score += 15;
+        flags.push({ level: 'warning', text: "Use of loop 'else' construct in Python (often AI trying to be 'Pythonic')." });
+    }
+
+    // 19. Bash - Perfect Quoting
+    let bashVars = (code.match(/\$[\w_]+/g) || []).length;
+    let quotedBashVars = (code.match(/"\$[\w_]+"/g) || []).length;
+    if (bashVars > 3 && bashVars === quotedBashVars) {
+        score += 10;
+        flags.push({ level: 'info', text: "Perfect bash variable quoting (no raw expansions). AI typically plays it extremely safe." });
+    }
+
+    // 20. TypeScript - any vs unknown
+    let tsAny = (code.match(/:\s*any\b/g) || []).length;
+    let tsUnknown = (code.match(/:\s*unknown\b/g) || []).length;
+    let recordAny = (code.match(/Record<string,\s*any>/g) || []).length;
+    if (recordAny > 1) {
+        score += 15;
+        flags.push({ level: 'warning', text: "Overuse of Record<string, any> in TypeScript instead of proper interfaces." });
+    }
+
+    // --- Newly Added 30 Heuristics (21-25) Conversational & Meta ---
+    // 21. Mismatched Step Comments
+    let step1 = /step 1/i.test(codeLow);
+    let step3 = /step 3/i.test(codeLow);
+    let step2 = /step 2/i.test(codeLow);
+    if (step1 && step3 && !step2) {
+        score += 30;
+        flags.push({ level: 'severe', text: "Mismatched numbered steps in comments (e.g., Step 1 then Step 3)." });
+    }
+
+    // 22. Hidden Affirmations
+    if (/["'](?:sure!|here is|as requested)["']/i.test(codeLow)) {
+        score += 40;
+        flags.push({ level: 'severe', text: "Conversational affirmation ('Sure!', 'Here is') hidden within strings." });
+    }
+
+    // 23. Exhaustive Edge-Case Testing
+    if (/\b(?:test_edge_cases|edgeCaseTests)\b/i.test(code)) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Block specifically labeled for edge-case testing at bottom of file." });
+    }
+
+    // 24. "Note:" Bullet Points
+    if (/(?:\/\/|#)\s*-\s*Note:/i.test(code) || /\*\s*Note:/i.test(code)) {
+        score += 20;
+        flags.push({ level: 'warning', text: "Markdown-style bullet points used for 'Note:' comments." });
+    }
+
+    // 25. Absence of Profanity/Frustration
+    if (/\b(?:wtf|hacky|todo:\s*fix this mess|ugly|stupid)\b/i.test(codeLow)) {
+        score -= 30;
+        flags.push({ level: 'good', text: "Frustration or informal colloquialisms detected. Highly indicative of human author." });
+    }
+
+    // --- Newly Added 30 Heuristics (26-30) Mathematical & Statistical ---
+    // 26. Cyclomatic Complexity vs Line Count
+    let logicalOps = (code.match(/&&|\|\|/g) || []).length;
+    let loops = (code.match(/\b(?:for|while)\b/g) || []).length;
+    let branches = ifCount + elseIfCount;
+    let cyclo = logicalOps + loops + branches + 1;
+    if (cyclo > 10 && lines.length < 20) {
+        score += 25;
+        flags.push({ level: 'warning', text: "Extremely high cyclomatic complexity for a short script." });
+    }
+
+    // 28. Whitespace Entropy
+    let mixTabsSpaces = (code.match(/^\t+/gm) && code.match(/^ +/gm));
+    if (mixTabsSpaces) {
+        score -= 15;
+        flags.push({ level: 'good', text: "Mixed tabs and spaces detected. Suggests manual/inconsistent formatting." });
+    }
+
+    // 29. Variable Name Length Variance
+    let varNames = (code.match(/\b(?:let|const|var|def)\s+([a-zA-Z_]\w*)/g) || []).map(v => v.split(/\s+/)[1]);
+    if (varNames.length > 4) {
+        let lens = varNames.map(v => v ? v.length : 0);
+        let mean = lens.reduce((a,b)=>a+b,0)/lens.length;
+        let vVar = lens.reduce((a,b)=>a+Math.pow(b-mean,2),0)/lens.length;
+        let dev = Math.sqrt(vVar);
+        if (dev < 1.5) {
+             score += 15;
+             flags.push({ level: 'info', text: "Extremely low variance in variable name lengths (uniform descriptiveness)." });
+        }
+    }
+
+    // 30. Logical Operator Density
+    if (logicalOps > 5 && lines.length < 15) {
+        score += 20;
+        flags.push({ level: 'warning', text: "High density of logical operators (&&, ||) in a short script." });
+    }
+
     // New Heuristic 12: The "Apology" Leak
     if (/\b(sorry for the confusion|my apologies, here is|apologies for the oversight)\b/i.test(codeLow)) {
         score += 80;
@@ -154,6 +357,12 @@ function execAnalysis(code) {
     if (tCount > 0 && cCount / tCount > 0.15) {
         score += 25;
         flags.push({ level: 'warning', text: "High comment density detected. Often seen in generated or tutorial code." });
+    }
+
+    // 2. Inline Comment Overkill (from the 30 new rules)
+    if (tCount > 0 && cCount / tCount > 0.5 && lines.length > 10) {
+        score += 30;
+        flags.push({ level: 'severe', text: "Extreme comment density (almost every line commented). Classic AI over-explanation." });
     }
     if (tutorialComments > 1) {
         score += 30;

@@ -37,13 +37,11 @@ const closeRulesBtn = document.getElementById('closeRulesBtn');
 const rulesModal = document.getElementById('rulesModal');
 
 viewRulesBtn.addEventListener('click', () => {
-    rulesModal.classList.remove('opacity-0', 'pointer-events-none');
-    rulesModal.firstElementChild.classList.remove('scale-95');
+    rulesModal.classList.add('active');
 });
 
 const closeRules = () => {
-    rulesModal.classList.add('opacity-0', 'pointer-events-none');
-    rulesModal.firstElementChild.classList.add('scale-95');
+    rulesModal.classList.remove('active');
 };
 
 closeRulesBtn.addEventListener('click', closeRules);
@@ -83,8 +81,8 @@ analyzeBtn.addEventListener('click', () => {
         return alert("It looks like you entered plain text. Please enter valid code to analyze.");
     }
 
-    inputSection.style.display = 'none';
-    loadingSection.style.display = 'flex';
+    inputSection.classList.remove('active');
+    loadingSection.classList.add('flex-active');
     loadingLogs.innerHTML = '';
 
     let logs = [
@@ -109,27 +107,23 @@ analyzeBtn.addEventListener('click', () => {
         let result = execAnalysis(code);
 
         // render results
-        loadingSection.style.display = 'none';
-        resultsSection.style.display = 'block';
+        loadingSection.classList.remove('flex-active');
+        resultsSection.classList.add('active');
 
         scoreText.innerText = `${result.score}%`;
 
         // colorize score circle
-        scoreCircle.classList.remove('border-red-500', 'border-orange-500', 'border-green-500');
-        scoreText.classList.remove('text-red-500', 'text-orange-500', 'text-green-500');
+        scoreCircle.classList.remove('score-red', 'score-orange', 'score-green');
         if (result.score > 70) {
-            scoreCircle.classList.add('border-red-500');
-            scoreText.classList.add('text-red-500');
+            scoreCircle.classList.add('score-red');
             resultTitle.innerText = "Highly Likely AI-Generated";
             resultDesc.innerText = "Significant patterns matching LLM outputs were found.";
         } else if (result.score > 30) {
-            scoreCircle.classList.add('border-orange-500');
-            scoreText.classList.add('text-orange-500');
+            scoreCircle.classList.add('score-orange');
             resultTitle.innerText = "Potentially AI-Assisted";
             resultDesc.innerText = "Some heuristics suggest possible AI generation or heavy template usage.";
         } else {
-            scoreCircle.classList.add('border-green-500');
-            scoreText.classList.add('text-green-500');
+            scoreCircle.classList.add('score-green');
             resultTitle.innerText = "Likely Human-Written";
             resultDesc.innerText = "Code appears natural and lacks common LLM artifacts.";
         }
@@ -138,7 +132,7 @@ analyzeBtn.addEventListener('click', () => {
         if (result.models.length > 0) {
             result.models.forEach(m => {
                 let span = document.createElement('span');
-                span.className = 'text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-md uppercase tracking-wide';
+                span.className = 'model-tag';
                 span.innerText = m;
                 modelTags.appendChild(span);
             });
@@ -148,31 +142,31 @@ analyzeBtn.addEventListener('click', () => {
         flagCountBadge.textContent = `${result.flags.length} Flag${result.flags.length !== 1 ? 's' : ''}`;
         if (result.flags.length === 0) {
             let li = document.createElement('li');
-            li.className = "text-sm text-slate-500 dark:text-slate-400 italic";
+            li.className = "no-flags";
             li.textContent = "No significant flags detected.";
             flagsList.appendChild(li);
         } else {
             result.flags.forEach(f => {
                 let li = document.createElement('li');
-                li.className = 'flex items-start gap-3 text-sm';
+                li.className = 'flag-item';
 
                 let icon = '';
                 let colorClass = '';
                 if (f.level === 'severe') {
-                    icon = '<i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5"></i>';
-                    colorClass = 'text-red-600 dark:text-red-400';
+                    icon = '<i data-lucide="alert-triangle"></i>';
+                    colorClass = 'severe';
                 } else if (f.level === 'warning') {
-                    icon = '<i data-lucide="alert-circle" class="w-4 h-4 mt-0.5"></i>';
-                    colorClass = 'text-orange-600 dark:text-orange-400';
+                    icon = '<i data-lucide="alert-circle"></i>';
+                    colorClass = 'warning';
                 } else if (f.level === 'good') {
-                    icon = '<i data-lucide="check-circle-2" class="w-4 h-4 mt-0.5"></i>';
-                    colorClass = 'text-green-600 dark:text-green-400';
+                    icon = '<i data-lucide="check-circle-2"></i>';
+                    colorClass = 'good';
                 } else {
-                    icon = '<i data-lucide="info" class="w-4 h-4 mt-0.5"></i>';
-                    colorClass = 'text-blue-600 dark:text-blue-400';
+                    icon = '<i data-lucide="info"></i>';
+                    colorClass = 'info';
                 }
 
-                li.innerHTML = `<div class="flex-shrink-0 ${colorClass}">${icon}</div><div class="text-slate-700 dark:text-slate-300 leading-relaxed flag-text-content"></div>`;
+                li.innerHTML = `<div class="flag-icon ${colorClass}">${icon}</div><div class="flag-text flag-text-content"></div>`;
                 li.querySelector('.flag-text-content').textContent = f.text;
                 flagsList.appendChild(li);
             });
@@ -183,8 +177,8 @@ analyzeBtn.addEventListener('click', () => {
 });
 
 resetBtn.addEventListener('click', () => {
-    resultsSection.style.display = 'none';
-    inputSection.style.display = 'block';
+    resultsSection.classList.remove('active');
+    inputSection.classList.add('active');
     codeInput.value = '';
     clearBtn.style.display = 'none';
     codeInput.focus();

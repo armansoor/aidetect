@@ -37,11 +37,13 @@ const closeRulesBtn = document.getElementById('closeRulesBtn');
 const rulesModal = document.getElementById('rulesModal');
 
 viewRulesBtn.addEventListener('click', () => {
-    rulesModal.classList.add('active');
+    rulesModal.classList.remove('opacity-0', 'pointer-events-none');
+    rulesModal.firstElementChild.classList.remove('scale-95');
 });
 
 const closeRules = () => {
-    rulesModal.classList.remove('active');
+    rulesModal.classList.add('opacity-0', 'pointer-events-none');
+    rulesModal.firstElementChild.classList.add('scale-95');
 };
 
 closeRulesBtn.addEventListener('click', closeRules);
@@ -81,17 +83,18 @@ analyzeBtn.addEventListener('click', () => {
         return alert("It looks like you entered plain text. Please enter valid code to analyze.");
     }
 
-    inputSection.classList.remove('active');
-    loadingSection.classList.add('flex-active');
+    inputSection.style.display = 'none';
+    loadingSection.style.display = 'flex';
+    loadingSection.classList.remove('hidden');
     loadingLogs.innerHTML = '';
 
     let logs = [
-        "Initializing heuristic engine...",
-        "Parsing Abstract Syntax Tree...",
-        "Calculating Shannon entropy...",
-        "Evaluating line-length variance...",
-        "Cross-referencing known LLM patterns...",
-        "Finalizing score..."
+        "Initializing advanced heuristic engine...",
+        "Parsing Abstract Syntax Tree (AST)...",
+        "Calculating Shannon entropy models...",
+        "Evaluating line-length variance metrics...",
+        "Cross-referencing known LLM signature patterns...",
+        "Finalizing diagnostic score..."
     ];
 
     let i = 0;
@@ -107,24 +110,38 @@ analyzeBtn.addEventListener('click', () => {
         let result = execAnalysis(code);
 
         // render results
-        loadingSection.classList.remove('flex-active');
-        resultsSection.classList.add('active');
+        loadingSection.style.display = 'none';
+        loadingSection.classList.add('hidden');
+        resultsSection.style.display = 'block';
+        resultsSection.classList.remove('hidden');
 
         scoreText.innerText = `${result.score}%`;
 
         // colorize score circle
-        scoreCircle.classList.remove('score-red', 'score-orange', 'score-green');
+        const scoreRing = document.getElementById('scoreRing');
+        scoreRing.classList.remove('border-red-500', 'border-amber-500', 'border-green-500', 'dark:border-red-500', 'dark:border-amber-500', 'dark:border-green-500', 'shadow-glow');
+        scoreText.classList.remove('text-red-500', 'text-amber-500', 'text-green-500');
+
         if (result.score > 70) {
-            scoreCircle.classList.add('score-red');
+            scoreRing.classList.add('border-red-500');
+            scoreText.classList.add('text-red-500');
             resultTitle.innerText = "Highly Likely AI-Generated";
+            resultTitle.classList.remove('text-slate-900', 'dark:text-white', 'text-amber-500', 'text-green-500');
+            resultTitle.classList.add('text-red-500');
             resultDesc.innerText = "Significant patterns matching LLM outputs were found.";
         } else if (result.score > 30) {
-            scoreCircle.classList.add('score-orange');
+            scoreRing.classList.add('border-amber-500');
+            scoreText.classList.add('text-amber-500');
             resultTitle.innerText = "Potentially AI-Assisted";
+            resultTitle.classList.remove('text-slate-900', 'dark:text-white', 'text-red-500', 'text-green-500');
+            resultTitle.classList.add('text-amber-500');
             resultDesc.innerText = "Some heuristics suggest possible AI generation or heavy template usage.";
         } else {
-            scoreCircle.classList.add('score-green');
+            scoreRing.classList.add('border-green-500', 'shadow-glow');
+            scoreText.classList.add('text-green-500');
             resultTitle.innerText = "Likely Human-Written";
+            resultTitle.classList.remove('text-slate-900', 'dark:text-white', 'text-red-500', 'text-amber-500');
+            resultTitle.classList.add('text-green-500');
             resultDesc.innerText = "Code appears natural and lacks common LLM artifacts.";
         }
 
@@ -132,7 +149,7 @@ analyzeBtn.addEventListener('click', () => {
         if (result.models.length > 0) {
             result.models.forEach(m => {
                 let span = document.createElement('span');
-                span.className = 'model-tag';
+                span.className = 'text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full uppercase tracking-widest border border-slate-200 dark:border-slate-600 shadow-sm';
                 span.innerText = m;
                 modelTags.appendChild(span);
             });
@@ -142,31 +159,36 @@ analyzeBtn.addEventListener('click', () => {
         flagCountBadge.textContent = `${result.flags.length} Flag${result.flags.length !== 1 ? 's' : ''}`;
         if (result.flags.length === 0) {
             let li = document.createElement('li');
-            li.className = "no-flags";
-            li.textContent = "No significant flags detected.";
+            li.className = "text-sm text-slate-500 dark:text-slate-400 italic font-medium";
+            li.textContent = "No significant flags detected. The code analysis passed without major issues.";
             flagsList.appendChild(li);
         } else {
             result.flags.forEach(f => {
                 let li = document.createElement('li');
-                li.className = 'flag-item';
+                li.className = 'flex items-start gap-4 text-sm font-medium';
 
                 let icon = '';
                 let colorClass = '';
+                let bgClass = '';
                 if (f.level === 'severe') {
-                    icon = '<i data-lucide="alert-triangle"></i>';
-                    colorClass = 'severe';
+                    icon = '<i data-lucide="alert-octagon" class="w-4 h-4 text-red-500"></i>';
+                    colorClass = 'text-red-600 dark:text-red-400';
+                    bgClass = 'bg-red-50 dark:bg-red-900/20';
                 } else if (f.level === 'warning') {
-                    icon = '<i data-lucide="alert-circle"></i>';
-                    colorClass = 'warning';
+                    icon = '<i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500"></i>';
+                    colorClass = 'text-amber-600 dark:text-amber-400';
+                    bgClass = 'bg-amber-50 dark:bg-amber-900/20';
                 } else if (f.level === 'good') {
-                    icon = '<i data-lucide="check-circle-2"></i>';
-                    colorClass = 'good';
+                    icon = '<i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>';
+                    colorClass = 'text-green-600 dark:text-green-400';
+                    bgClass = 'bg-green-50 dark:bg-green-900/20';
                 } else {
-                    icon = '<i data-lucide="info"></i>';
-                    colorClass = 'info';
+                    icon = '<i data-lucide="info" class="w-4 h-4 text-blue-500"></i>';
+                    colorClass = 'text-blue-600 dark:text-blue-400';
+                    bgClass = 'bg-blue-50 dark:bg-blue-900/20';
                 }
 
-                li.innerHTML = `<div class="flag-icon ${colorClass}">${icon}</div><div class="flag-text flag-text-content"></div>`;
+                li.innerHTML = `<div class="flex-shrink-0 p-1.5 rounded-lg mt-0.5 shadow-sm ${bgClass}">${icon}</div><div class="text-slate-700 dark:text-slate-300 leading-relaxed flag-text-content pt-1"></div>`;
                 li.querySelector('.flag-text-content').textContent = f.text;
                 flagsList.appendChild(li);
             });
@@ -177,8 +199,9 @@ analyzeBtn.addEventListener('click', () => {
 });
 
 resetBtn.addEventListener('click', () => {
-    resultsSection.classList.remove('active');
-    inputSection.classList.add('active');
+    resultsSection.style.display = 'none';
+    resultsSection.classList.add('hidden');
+    inputSection.style.display = 'block';
     codeInput.value = '';
     clearBtn.style.display = 'none';
     codeInput.focus();

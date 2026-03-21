@@ -4,13 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Code Analyzer</title>
-
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <link href="style.css" rel="stylesheet">
     <script src="analyzer.js"></script>
     <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6', // Teal primary
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            950: '#042f2e',
+                        },
+                        surface: {
+                            light: '#ffffff',
+                            dark: '#0f172a',
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                        'glow': '0 0 15px rgba(20, 184, 166, 0.5)',
+                        'glow-sm': '0 0 10px rgba(20, 184, 166, 0.3)',
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+
         // grab system preference
         try {
             let pref = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
@@ -21,174 +74,231 @@
             }
         } catch (err) { console.error("theme issue:", err); }
     </script>
-</head>
-<body>
+    <style>
+        /* Modern Scrollbar for Textarea */
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        .dark textarea::-webkit-scrollbar-thumb { background-color: #334155; }
 
-    <main class="main-container">
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Smooth transitions */
+        * { transition-property: color, background-color, border-color, box-shadow; transition-duration: 300ms; }
+        .no-transition { transition: none !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 p-4 md:p-8 flex flex-col items-center justify-center relative overflow-x-hidden">
+
+    <!-- Decorative background blobs -->
+    <div class="fixed top-0 -left-4 w-72 h-72 bg-primary-300 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-blob dark:opacity-10 dark:mix-blend-screen pointer-events-none z-0"></div>
+    <div class="fixed top-0 -right-4 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-blob [animation-delay:2s] dark:opacity-10 dark:mix-blend-screen pointer-events-none z-0"></div>
+    <div class="fixed -bottom-8 left-20 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-blob [animation-delay:4s] dark:opacity-10 dark:mix-blend-screen pointer-events-none z-0"></div>
+
+    <main class="w-full max-w-4xl bg-white/80 dark:bg-slate-900/80 glass-panel rounded-3xl shadow-glass border border-white/20 dark:border-slate-700/50 overflow-hidden relative z-10 transition-all duration-300">
         
-        <header class="header">
-            <div class="header-left">
-                <div class="logo-icon">
-                    <i data-lucide="layers"></i>
+        <header class="px-6 md:px-10 py-6 border-b border-slate-200/50 dark:border-slate-800/50 flex flex-row items-center justify-between gap-4">
+            <div class="flex flex-row items-center gap-5">
+                <div class="bg-gradient-to-br from-primary-400 to-primary-600 p-3 rounded-2xl text-white shadow-glow-sm hidden sm:flex items-center justify-center transform transition-transform hover:scale-105">
+                    <i data-lucide="scan-line" class="w-6 h-6"></i>
                 </div>
                 <div>
-                    <h1 class="title-row">
-                        <span class="title">AI Code Analyzer</span>
-                        <span class="pro-badge">Pro</span>
+                    <h1 class="text-2xl font-bold text-slate-900 dark:text-white leading-tight flex items-center flex-wrap gap-3 tracking-tight">
+                        AI Code Analyzer
+                        <span class="text-[10px] bg-slate-900 text-primary-400 dark:bg-primary-500/20 dark:text-primary-300 px-2.5 py-1 rounded-full font-bold tracking-widest uppercase border border-slate-700 dark:border-primary-500/30">Pro</span>
                     </h1>
-                    <p class="subtitle">Advanced Heuristic & Entropy Engine</p>
-                    <p class="tagline">"A Vibe coded website to detect Vibe coded website"</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium tracking-wide">Advanced Heuristic & Entropy Engine</p>
                 </div>
             </div>
             
-            <button id="themeToggle" class="theme-toggle" aria-label="Toggle Dark Mode">
-                <i data-lucide="sun" id="sunIcon" class="hidden"></i>
-                <i data-lucide="moon" id="moonIcon" class="hidden"></i>
+            <button id="themeToggle" class="flex-shrink-0 p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-sm hover:shadow" aria-label="Toggle Dark Mode">
+                <i data-lucide="sun" id="sunIcon" class="hidden w-5 h-5"></i>
+                <i data-lucide="moon" id="moonIcon" class="hidden w-5 h-5"></i>
             </button>
         </header>
 
-        <section id="inputSection" class="section active">
+        <div id="inputSection" class="p-6 md:p-10" style="display: block;">
             
-            <div class="info-banner">
-                <i data-lucide="shield-check"></i>
+            <div class="mb-8 flex items-start gap-4 bg-gradient-to-r from-primary-50 to-transparent dark:from-primary-900/20 dark:to-transparent p-5 rounded-2xl border-l-4 border-primary-500 shadow-sm">
+                <i data-lucide="shield-check" class="w-6 h-6 text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5"></i>
                 <div>
-                    <h3 class="info-title">100% Secure & Local</h3>
-                    <p class="info-desc">Runs combined heuristics, AST profiling, and entropy math entirely in your browser. Code never leaves your device.</p>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">100% Secure & Local</h3>
+                    <p class="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed font-medium">Runs combined heuristics, AST profiling, and entropy math entirely in your browser. Code never leaves your device.</p>
                 </div>
             </div>
             
-            <div id="dropZone" class="dropzone">
-                <i data-lucide="file-code-2"></i>
-                <p class="dropzone-title">Click to upload or drag and drop</p>
-                <p class="dropzone-desc">.js, .py, .html, .css, .json, .ts, .txt</p>
+            <div id="dropZone" class="w-full border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-2xl p-8 text-center mb-8 cursor-pointer hover:bg-primary-50/50 dark:hover:bg-slate-800/50 hover:border-primary-400 dark:hover:border-primary-500 transition-all duration-300 flex flex-col items-center justify-center gap-3 group">
+                <div class="p-4 bg-slate-100 dark:bg-slate-800 rounded-full group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                    <i data-lucide="file-code-2" class="w-8 h-8 text-slate-400 dark:text-slate-500 group-hover:text-primary-500"></i>
+                </div>
+                <p class="text-base text-slate-700 dark:text-slate-300 font-semibold">Click to upload or drag and drop</p>
+                <p class="text-xs font-medium text-slate-500 dark:text-slate-500">.js, .py, .html, .css, .json, .ts, .txt</p>
                 <input type="file" id="fileInput" class="hidden" accept=".js,.py,.html,.css,.java,.c,.cpp,.ts,.txt,.md,.json">
             </div>
 
-            <div class="input-group">
-                <div class="input-header">
-                    <label for="codeInput" class="input-label">Code Snippet</label>
-                    <button id="clearBtn" class="clear-btn" style="display: none;">Clear Input</button>
+            <div class="mb-8">
+                <div class="flex flex-col gap-2 mb-3">
+                    <div class="flex justify-between items-center">
+                        <label for="codeInput" class="block text-sm font-bold text-slate-800 dark:text-slate-200 tracking-wide uppercase">Source Code Snippet</label>
+                        <button id="clearBtn" class="text-xs font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors uppercase tracking-wider bg-primary-50 dark:bg-primary-900/30 px-3 py-1 rounded-full" style="display: none;">Clear</button>
+                    </div>
                 </div>
-                <p class="input-hint">Please provide complete code snippets. Avoid truncated code, as it is highly impossible for the system to detect if it is AI or human.</p>
-                <textarea id="codeInput" class="code-input" placeholder="Paste suspected code or config file here..."></textarea>
+
+                <!-- Styled Code Editor Container -->
+                <div class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner bg-slate-50 dark:bg-[#0d1117] focus-within:ring-2 focus-within:ring-primary-500/50 focus-within:border-primary-500 transition-all">
+                    <!-- Editor Header Fake -->
+                    <div class="bg-slate-200/50 dark:bg-slate-800/80 px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-400 dark:bg-red-500/80"></div>
+                            <div class="w-3 h-3 rounded-full bg-amber-400 dark:bg-amber-500/80"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-400 dark:bg-green-500/80"></div>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500 ml-2">source.txt</span>
+                    </div>
+                    <textarea id="codeInput" class="w-full h-56 bg-transparent text-slate-800 dark:text-slate-300 p-4 font-mono text-sm resize-y outline-none leading-relaxed" placeholder="Paste suspected code or config file here..."></textarea>
+                </div>
             </div>
 
-            <div class="btn-group">
-                <button id="viewRulesBtn" class="btn btn-secondary">
-                    <i data-lucide="book-open"></i>
-                    Rules
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="viewRulesBtn" class="w-full sm:w-1/3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-semibold py-3.5 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow hover:-translate-y-0.5">
+                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                    View Rules
                 </button>
-                <button id="analyzeBtn" class="btn btn-primary">
-                    <i data-lucide="scan-line"></i>
-                    Analyze Source
+                <button id="analyzeBtn" class="w-full sm:w-2/3 bg-slate-900 hover:bg-slate-800 dark:bg-primary-600 dark:hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 relative overflow-hidden group">
+                    <span class="absolute inset-0 w-full h-full bg-white/10 group-hover:bg-transparent transition-colors"></span>
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    Analyze Source Code
                 </button>
             </div>
-        </section>
+        </div>
 
         <!-- Rules Modal -->
-        <div id="rulesModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title">
-                        <i data-lucide="microscope"></i>
+        <div id="rulesModal" class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh]">
+                <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <div class="bg-primary-100 dark:bg-primary-900/50 p-2 rounded-xl">
+                            <i data-lucide="microscope" class="w-5 h-5 text-primary-600 dark:text-primary-400"></i>
+                        </div>
                         Active Detection Rules
                     </h2>
-                    <button id="closeRulesBtn" class="modal-close">
-                        <i data-lucide="x"></i>
+                    <button id="closeRulesBtn" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                        <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <ul class="rules-list">
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Comment & Structure Analysis:</strong> Flags over-explaining ("Step 1:", "Note:"), excessive comments relative to code, and perfect boilerplate formatting.</div>
+                <div class="p-8 overflow-y-auto">
+                    <ul class="space-y-5 text-sm text-slate-700 dark:text-slate-300 font-medium">
+                        <li class="flex items-start gap-4">
+                            <div class="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-lg flex-shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-4 h-4 text-primary-500"></i>
+                            </div>
+                            <div class="leading-relaxed"><strong class="text-slate-900 dark:text-white">Comment & Structure Analysis:</strong> Flags over-explaining ("Step 1:", "Note:"), excessive comments relative to code, and perfect boilerplate formatting.</div>
                         </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Line Length Variance (Burstiness):</strong> Evaluates the standard deviation of line lengths. AI code tends to be highly uniform and visually "blocky".</div>
+                        <li class="flex items-start gap-4">
+                            <div class="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-lg flex-shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-4 h-4 text-primary-500"></i>
+                            </div>
+                            <div class="leading-relaxed"><strong class="text-slate-900 dark:text-white">Line Length Variance (Burstiness):</strong> Evaluates the standard deviation of line lengths. AI code tends to be highly uniform and visually "blocky".</div>
                         </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Lexical Entropy:</strong> Measures vocabulary variation. Repetitive tokens, generic names (temp, item, val), and repetitive structures decrease entropy.</div>
+                        <li class="flex items-start gap-4">
+                            <div class="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-lg flex-shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-4 h-4 text-primary-500"></i>
+                            </div>
+                            <div class="leading-relaxed"><strong class="text-slate-900 dark:text-white">Lexical Entropy:</strong> Measures vocabulary variation. Repetitive tokens, generic names (temp, item, val), and repetitive structures decrease entropy.</div>
                         </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Conversational Leakage:</strong> Scans for exact phrases LLMs output when copy-pasted directly (e.g., "Certainly!", "Here is the updated code").</div>
+                        <li class="flex items-start gap-4">
+                            <div class="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-lg flex-shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-4 h-4 text-primary-500"></i>
+                            </div>
+                            <div class="leading-relaxed"><strong class="text-slate-900 dark:text-white">Conversational Leakage:</strong> Scans for exact phrases LLMs output when copy-pasted directly (e.g., "Certainly!", "Here is the updated code").</div>
                         </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Modern Syntax Fingerprinting:</strong> Detects excessive modern syntactic sugar: long utility class lists (Tailwind), heavy arrow functions, `.map().filter()` chains, and strict `let/const` exclusivity.</div>
+                        <li class="flex items-start gap-4">
+                            <div class="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-lg flex-shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-4 h-4 text-primary-500"></i>
+                            </div>
+                            <div class="leading-relaxed"><strong class="text-slate-900 dark:text-white">Modern Syntax Fingerprinting:</strong> Detects excessive modern syntactic sugar.</div>
                         </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Advanced Syntax Overkill:</strong> Detects excessive use of modern syntax (optional chaining, complex list comprehensions, heavy try-catch blocks) in short, trivial files.</div>
+                        <li class="flex items-start gap-4">
+                            <div class="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-lg flex-shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-4 h-4 text-primary-500"></i>
+                            </div>
+                            <div class="leading-relaxed"><strong class="text-slate-900 dark:text-white">Human Indicators:</strong> Detects messy behaviors like multiple comment slashes (////), commented-out code blocks, and aggressive debug statements.</div>
                         </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Perfect Formatting & Quoting:</strong> AI rarely leaves trailing whitespaces or inconsistent blank lines. Also checks for perfect variable quoting in bash.</div>
-                        </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Human Indicators:</strong> Detects messy behaviors like multiple comment slashes (////), commented-out code blocks, and aggressive debug statements (console.log('wtf')).</div>
-                        </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Lexical & Syntax:</strong> Looks for leftover prompt text ("write a function"), textbook placeholders ("YOUR_API_KEY_HERE"), perfectly symmetrical code blocks, and sequential naming (userList, userCount).</div>
-                        </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Language-Specific Artifacts:</strong> Detects excessive Python `typing`, React exhaustive dependencies, Java boilerplate getters/setters, and redundant C++ guards.</div>
-                        </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Mathematical & Statistical:</strong> Analyzes cyclomatic complexity vs line count, operator density, and calculates variable name length variance.</div>
-                        </li>
-                        <li class="rule-item">
-                            <i data-lucide="check-circle"></i>
-                            <div><strong>Meta Heuristics:</strong> Identifies mismatched step comments, "Note:" bullet points, hidden affirmations, and specific AI apologies.</div>
+                        <li class="flex items-start gap-4">
+                            <div class="bg-primary-50 dark:bg-primary-900/20 p-1.5 rounded-lg flex-shrink-0 mt-0.5">
+                                <i data-lucide="check" class="w-4 h-4 text-primary-500"></i>
+                            </div>
+                            <div class="leading-relaxed"><strong class="text-slate-900 dark:text-white">Mathematical & Statistical:</strong> Analyzes cyclomatic complexity vs line count, operator density, and calculates variable name length variance.</div>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <section id="loadingSection" class="section loading-section">
-            <i data-lucide="hexagon" class="spinner"></i>
-            <h2 class="loading-title">Running Diagnostics...</h2>
-            <div class="loading-terminal">
-                <div id="loadingLogs" class="loading-logs"></div>
+        <div id="loadingSection" class="p-16 flex flex-col items-center justify-center text-center hidden animate-slide-up" style="display: none;">
+            <div class="relative">
+                <div class="absolute inset-0 bg-primary-400 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                <i data-lucide="scan" class="w-16 h-16 text-primary-500 relative z-10 animate-pulse-slow"></i>
             </div>
-        </section>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-6 mb-2 tracking-tight">Running Diagnostics</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-8">Analyzing syntax, entropy, and metadata...</p>
 
-        <section id="resultsSection" class="section results-section">
-            <div class="result-card">
-                <div id="scoreCircle" class="score-circle">
-                    <span id="scoreText" class="score-text">0%</span>
-                    <span class="score-label">AI Probable</span>
+            <div class="w-full max-w-lg bg-slate-900 rounded-2xl border border-slate-800 p-5 text-left shadow-2xl overflow-hidden relative group">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-blue-500 to-purple-500 opacity-75"></div>
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-800">
+                    <i data-lucide="terminal" class="w-4 h-4 text-slate-500"></i>
+                    <span class="text-xs font-mono text-slate-500 uppercase tracking-widest">System Log</span>
+                </div>
+                <div id="loadingLogs" class="text-xs font-mono text-green-400 space-y-2.5 h-32 flex flex-col justify-end opacity-90"></div>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="p-6 md:p-10 hidden animate-slide-up bg-slate-50/50 dark:bg-slate-900/30" style="display: none;">
+
+            <!-- Dashboard Score Card -->
+            <div class="bg-white dark:bg-slate-800/80 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm mb-8 flex flex-col md:flex-row items-center gap-10 relative overflow-hidden">
+
+                <!-- Decorative background elements in card -->
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-primary-50 dark:bg-primary-900/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="flex-shrink-0 relative">
+                    <!-- The colored ring will be updated via JS -->
+                    <div id="scoreRing" class="flex flex-col items-center justify-center w-40 h-40 rounded-full border-[6px] border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-inner relative z-10 transition-colors duration-500">
+                        <span id="scoreText" class="text-5xl font-black text-slate-800 dark:text-white tracking-tighter transition-colors duration-500">0%</span>
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">AI Probable</span>
+                    </div>
                 </div>
                 
-                <div class="result-info">
-                    <h2 id="resultTitle" class="result-title">Analysis Complete</h2>
-                    <p id="resultDesc" class="result-desc">Diagnostic modules have processed the input.</p>
-                    <div id="modelTags" class="model-tags"></div>
+                <div class="flex-grow text-center md:text-left relative z-10">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest mb-4">
+                        <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                        Analysis Complete
+                    </div>
+                    <h2 id="resultTitle" class="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight transition-colors duration-300">Evaluating...</h2>
+                    <p id="resultDesc" class="text-base text-slate-600 dark:text-slate-400 mb-6 font-medium leading-relaxed">Diagnostic modules have processed the input.</p>
+                    <div id="modelTags" class="flex flex-wrap gap-2 justify-center md:justify-start"></div>
                 </div>
             </div>
 
-            <div class="flags-card">
-                <div class="flags-header">
-                    <h3 class="flags-title">Detailed Flags</h3>
-                    <span class="flag-count" id="flagCount">0 Flags</span>
+            <!-- Flags Details -->
+            <div class="bg-white dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mb-8">
+                <div class="px-8 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">Diagnostic Flags</h3>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-full shadow-sm" id="flagCount">0 Flags</span>
                 </div>
-                <div class="flags-body">
-                    <ul id="flagsList" class="flags-list"></ul>
+                <div class="p-8">
+                    <ul id="flagsList" class="space-y-5"></ul>
                 </div>
             </div>
 
-            <button id="resetBtn" class="btn btn-secondary btn-full">
-                <i data-lucide="rotate-ccw"></i>
+            <button id="resetBtn" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow hover:-translate-y-0.5">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
                 Scan New Snippet
             </button>
-        </section>
+        </div>
     </main>
 
     <script src="app.js"></script>

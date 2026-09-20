@@ -25,7 +25,7 @@ const fileInput = document.getElementById('fileInput'), dropZone = document.getE
 const codeInput = document.getElementById('codeInput'), analyzeBtn = document.getElementById('analyzeBtn');
 const clearBtn = document.getElementById('clearBtn'), inputSection = document.getElementById('inputSection');
 const loadingSection = document.getElementById('loadingSection'), resultsSection = document.getElementById('resultsSection');
-const scoreCircle = document.getElementById('scoreCircle'), scoreText = document.getElementById('scoreText');
+const scoreText = document.getElementById('scoreText');
 const resultTitle = document.getElementById('resultTitle'), resultDesc = document.getElementById('resultDesc');
 const flagsList = document.getElementById('flagsList'), resetBtn = document.getElementById('resetBtn');
 const modelTags = document.getElementById('modelTags'), flagCountBadge = document.getElementById('flagCount');
